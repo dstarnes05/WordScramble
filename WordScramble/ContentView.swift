@@ -16,6 +16,8 @@ struct ContentView: View {
     @State private var errorMessage = ""
     @State private var showingError = false
     
+    @State private var score = 0
+    
     var body: some View {
         NavigationStack {
             List {
@@ -34,6 +36,9 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(rootWord)
+            .toolbar {
+                Button("Start Over", action: startGame)
+            }
             .onSubmit(addNewWord)
             .onAppear(perform: startGame)
             .alert(errorTitle, isPresented: $showingError) {
@@ -41,6 +46,9 @@ struct ContentView: View {
             } message: {
                 Text(errorMessage)
             }
+            
+            Text("Current Score: \(score)")
+                .font(.headline.bold())
         }
     }
     
@@ -63,9 +71,22 @@ struct ContentView: View {
             wordError(title: "Word not recognized", message: "You can't just make them up, you know!")
             return
         }
+        
+        guard isUnique(word: answer) else {
+            wordError(title: "Word not unique", message: "You really thought you could use the root word as an answer?")
+            return
+        }
+        
+        guard tooShort(word: answer) else {
+            wordError(title: "Word is too short", message: "Valid words must be longer than 3 letters.")
+            return
+        }
+        
+        
         withAnimation {
             usedWords.insert(answer, at: 0)
         }
+        score += answer.count
         
         newWord = ""
     }
@@ -75,6 +96,8 @@ struct ContentView: View {
             if let startWords = try? String(contentsOf: startWordsURL, encoding: .utf8) {
                 let allWords = startWords.components(separatedBy: "\n")
                 rootWord = allWords.randomElement() ?? "silkworm"
+                usedWords.removeAll()
+                score = 0
                 return
             }
         }
@@ -105,6 +128,20 @@ struct ContentView: View {
         let range = NSRange(location: 0, length: word.utf16.count)
         let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
         return misspelledRange.location == NSNotFound
+    }
+    
+    func tooShort(word: String) -> Bool {
+        if word.count < 3 {
+            return false
+        }
+        return true
+    }
+    
+    func isUnique(word: String) -> Bool {
+        if word == rootWord {
+            return false
+        }
+        return true
     }
     
     func wordError(title: String, message: String) {
