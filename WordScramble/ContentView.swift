@@ -19,38 +19,43 @@ struct ContentView: View {
     @State private var score = 0
     
     var body: some View {
+        
         NavigationStack {
-            List {
-                Section {
-                    TextField("Enter your word", text: $newWord)
-                        .textInputAutocapitalization(.never)
-                }
-                
-                Section {
-                    ForEach(usedWords, id: \.self) { word in
-                        HStack {
-                            Image(systemName: "\(word.count).circle")
-                            Text(word)
+                List {
+                    Section {
+                        TextField("Enter your word", text: $newWord)
+                            .textInputAutocapitalization(.never)
+                    }
+                    
+                    Section {
+                        ForEach(usedWords, id: \.self) { word in
+                            HStack {
+                                Image(systemName: "\(word.count).circle")
+                                Text(word)
+                            }
                         }
                     }
                 }
+                .scrollContentBackground(.hidden)
+                .background(.brown)
+                .navigationTitle(rootWord)
+                .toolbar {
+                    Button("Start Over", action: startGame)
+                        .foregroundStyle(Color.black)
+                }
+                .onSubmit(addNewWord)
+                .onAppear(perform: startGame)
+                .alert(errorTitle, isPresented: $showingError) {
+                    Button("OK") {}
+                } message: {
+                    Text(errorMessage)
+                }
+                
+                Text("Current Score: \(score)")
+                    .font(.headline.bold())
             }
-            .navigationTitle(rootWord)
-            .toolbar {
-                Button("Start Over", action: startGame)
-            }
-            .onSubmit(addNewWord)
-            .onAppear(perform: startGame)
-            .alert(errorTitle, isPresented: $showingError) {
-                Button("OK") {}
-            } message: {
-                Text(errorMessage)
-            }
-            
-            Text("Current Score: \(score)")
-                .font(.headline.bold())
-        }
     }
+
     
     func addNewWord() {
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -83,9 +88,10 @@ struct ContentView: View {
         }
         
         
-        withAnimation {
+        withAnimation(.bouncy(duration: Double(answer.count))) {
             usedWords.insert(answer, at: 0)
         }
+
         score += answer.count
         
         newWord = ""
